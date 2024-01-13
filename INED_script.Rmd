@@ -1,0 +1,308 @@
+---
+title: "INED intretien"
+author: "Joseph Siegmund"
+date: "1/12/2024"
+output: html_document
+---
+
+set working directory and upload dataset
+```{r}
+setwd("/Users/jsiegm1/Documents/INED interview/donnees")
+d <- read.csv("data.csv" , header=T, sep= ";")
+
+
+```
+
+
+```{r}
+
+install.packages("visdat")
+install.packages("skimr")
+install.packages("DataExplorer")
+install.packages("tidyverse")
+install.packages("VIM")
+
+library(purrr)
+library(mice)
+library(VIM)
+library(visdat)
+library(skimr)
+library(DataExplorer)
+library(dplyr)
+library(ggplot2)
+```
+
+
+
+take a look at the dataset formatting 
+```{r }
+colnames(d)
+str(d)
+```
+
+reshape the data, create new variables 
+
+```{r }
+df1 <- d %>% 
+  select(id, `annee_tentative.1`, `traitement_tentative.1`) %>% 
+  rename(Year= annee_tentative.1, Treatment= traitement_tentative.1) %>% 
+  mutate(Tentative= 1)
+
+df2 <- d %>% 
+  select(id, `annee_tentative.2`, `traitement_tentative.2`) %>% 
+  rename(Year= annee_tentative.2, Treatment= traitement_tentative.2) %>% 
+  mutate(Tentative= 2)
+
+df3 <- d %>% 
+  select(id, `annee_tentative.3`, `traitement_tentative.3`) %>% 
+  rename(Year= annee_tentative.3, Treatment= traitement_tentative.3) %>% 
+  mutate(Tentative= 3)
+
+df4 <- d %>% 
+  select(id, `annee_tentative.4`, `traitement_tentative.4`) %>% 
+  rename(Year= annee_tentative.4, Treatment= traitement_tentative.4) %>% 
+  mutate(Tentative= 4)
+
+df5 <- d %>% 
+  select(id, `annee_tentative.5`, `traitement_tentative.5`) %>% 
+  rename(Year= annee_tentative.5, Treatment= traitement_tentative.5) %>% 
+  mutate(Tentative= 5)
+
+
+df6 <- d %>% 
+  select(id, `annee_tentative.6`, `traitement_tentative.6`) %>% 
+  rename(Year= annee_tentative.6, Treatment= traitement_tentative.6) %>% 
+  mutate(Tentative= 6)
+
+
+df7 <- d %>% 
+  select(id, `annee_tentative.7`, `traitement_tentative.7`) %>% 
+  rename(Year= annee_tentative.7, Treatment= traitement_tentative.7) %>% 
+  mutate(Tentative= 7)
+
+
+df8 <- d %>% 
+  select(id, `annee_tentative.8`, `traitement_tentative.8`) %>% 
+  rename(Year= annee_tentative.8, Treatment= traitement_tentative.8) %>% 
+  mutate(Tentative= 8)
+
+df9 <- d %>% 
+  select(id, `annee_tentative.9`, `traitement_tentative.9`) %>% 
+  rename(Year= annee_tentative.9, Treatment= traitement_tentative.9) %>% 
+  mutate(Tentative= 9)
+
+df10 <- d %>% 
+  select(id, `annee_tentative.10`, `traitement_tentative.10`) %>% 
+  rename(Year= annee_tentative.10, Treatment= traitement_tentative.10) %>% 
+  mutate(Tentative= 10)
+```
+
+create new data frame 
+arrange by id 
+
+```{r }
+dff <- bind_rows(df1, df2, df3, df4, df4, df6, df7, df8, df9, df10)
+dff <- dff %>%  arrange(id)
+
+  
+```
+
+Check for missing
+Missing at random
+1540 total observations
+773 obs missing in Year
+686 obos missing in treatment 
+
+
+```{r }
+str(dff)
+skim(dff)
+
+```
+
+ handle missing & impolausible data
+ 
+Treatment 686  missing 
+Treatment 686 missing both Year and Treatment
+Year 773 missing 
+
+There are not enough varibles to justify mulitple imputation. 
+observations missing both Year and Treatmnet omitted 
+Double check with data manager for missing treatments 
+
+1540 total observations - 686 missing (treatment) = 854
+1540 total observations - 773 missing (Year) = 776 obs 
+no_na = 767 obs
+
+Dont forget to add implausible data!
+
+154 total people 
+
+```{r }
+dff %>%  filter(is.na(Treatment))
+dff %>%  filter(is.na(Year))
+
+missing_both <- dff %>% filter(is.na(Treatment) & is.na(Year))
+missing_year <- dff %>% filter(is.na(Year))
+
+dff_missing <- dff
+dff_complete <- dff %>%filter(!is.na(Treatment) & !is.na(Year))
+skim(dff_complete)
+unique(dff_complete$id)
+
+prop.table(table(dff_missing$Year))
+prop.table(table(dff_complete$Year))
+
+
+```
+
+ NAs  appear to be missing at random
+Here we will create:
+labels, 
+factors, 
+new variables
+
+Change Treatment,
+Year to factor and create labels
+Subset first tentative to see if new attempts are increasing over time
+
+
+95			
+2017	97			
+2018	103			
+2019	99			
+2020	102			
+2021	99			
+2022	80			
+avant_2005	92	
+
+
+<2005	92			
+2005-2016	95			
+2017	97			
+2018	103			
+2019	99			
+2020	102			
+2021	99			
+NA	80	
+
+```{r }
+final <- dff_complete
+summary(final$Year)
+unique(final$Year)
+skim(final)
+
+final %>% count(Year)
+final %>% count(Year_factored)
+```
+
+
+```{r }
+final$Year_factored <- factor (final$Year, 
+            levels = c("avant_2005", "2005-2016", "2017", "2018", "2019", "2020", "2021", "2022"), 
+            labels = c("<2005", "2005-2016", "2017", "2018", "2019", "2020","2021", "2022")
+                          )
+
+
+
+summary(final$Year_factored)
+
+final$Treatment_factored <- factor(final$Treatment, 
+                        levels = c( "traitement.1", "traitement.2", "traitement.3","traitement.4"),
+                        labels= c("I", "II","III", "IV"))
+
+summary(final$Treatment_factored) 
+
+
+```
+
+
+create data base filtering by first tentative
+
+```{r }
+
+first_tentative <- final %>% filter(Tentative==1)
+
+```
+
+descriptive statistics 
+
+
+```{r }
+library(gtsummary)
+
+final %>%
+  select(Year_factored, Treatment_factored, Tentative) %>% 
+  tbl_summary( 
+    by = Treatment_factored,
+    statistic = list(Tentative ~ "{mean} ({sd})"),
+    type = list(Tentative ~ "continuous"), 
+    label = Year_factored ~ "Year", 
+    missing = "no"
+  ) %>%
+  italicize_levels() %>%  
+  bold_labels() %>% 
+  add_p() %>% 
+  add_stat_label() %>% 
+  add_overall %>% 
+  modify_spanning_header(c("stat_1","stat_2", "stat_3", "stat_4") ~ "Treatment Type") %>%   modify_caption("AMP Outside French Framework Descriptive Statistics") 
+
+
+```
+
+
+```{r }
+library(gtsummary)
+
+first_tentative %>%
+  select(Year_factored, Treatment_factored) %>% 
+  tbl_summary( 
+  # Specify the variable type
+    missing = "no"
+  ) %>%
+  italicize_levels() %>%  
+  bold_labels() %>% 
+  modify_caption("AMP Outside French Framework Descriptive Statistics")
+
+
+```
+
+
+
+
+
+```{r }
+library(ggplot2)
+final$Treatment_factored <- relevel(final$Treatment_factored, ref="I")
+ggplot(final, aes(Treatment_factored)) + geom_bar(aes(fill=Treatment_factored)) + 
+  ggtitle("Treatement distribution of the patients")
+
+
+
+```
+
+
+```{r }
+ggplot(final, aes(Tentative, Treatment_factored)) + geom_boxplot() + ylab("Treatmnet") +
+  labs(title = "Tentatives distribution of the patients",
+              subtitle = "by treatment",
+              caption = "Data source: INED AMP study")
+
+
+
+```
+
+
+
+```{r }
+
+
+
+
+```
+
+statistical test
+
+```{r }
+
+```

@@ -1,0 +1,202 @@
+---
+title: "INED intretien"
+author: "Joseph Siegmund"
+date: "1/12/2024"
+output: html_document
+---
+
+set working directory and upload dataset
+```{r}
+setwd("/Users/jsiegm1/Documents/INED interview/donnees")
+d <- read.csv("data.csv" , header=T, sep= ";")
+```
+
+
+```{r}
+
+install.packages("visdat")
+install.packages("skimr")
+install.packages("DataExplorer")
+install.packages("tidyverse")
+install.packages("VIM")
+
+library(purrr)
+library(mice)
+library(VIM)
+library(visdat)
+library(skimr)
+library(DataExplorer)
+library(dplyr)
+library(ggplot2)
+```
+
+
+
+take a look at the dataset formatting 
+```{r }
+View(d)
+colnames(d)
+str(d)
+```
+
+reshape the data, create new variables 
+
+```{r }
+df1 <- d %>% 
+  select(id, `annee_tentative.1`, `traitement_tentative.1`) %>% 
+  rename(Year= annee_tentative.1, Treatment= traitement_tentative.1) %>% 
+  mutate(Tentative= 1)
+
+df2 <- d %>% 
+  select(id, `annee_tentative.2`, `traitement_tentative.2`) %>% 
+  rename(Year= annee_tentative.2, Treatment= traitement_tentative.2) %>% 
+  mutate(Tentative= 2)
+
+df3 <- d %>% 
+  select(id, `annee_tentative.3`, `traitement_tentative.3`) %>% 
+  rename(Year= annee_tentative.3, Treatment= traitement_tentative.3) %>% 
+  mutate(Tentative= 3)
+
+df4 <- d %>% 
+  select(id, `annee_tentative.4`, `traitement_tentative.4`) %>% 
+  rename(Year= annee_tentative.4, Treatment= traitement_tentative.4) %>% 
+  mutate(Tentative= 4)
+
+df5 <- d %>% 
+  select(id, `annee_tentative.5`, `traitement_tentative.5`) %>% 
+  rename(Year= annee_tentative.5, Treatment= traitement_tentative.5) %>% 
+  mutate(Tentative= 5)
+
+
+df6 <- d %>% 
+  select(id, `annee_tentative.6`, `traitement_tentative.6`) %>% 
+  rename(Year= annee_tentative.6, Treatment= traitement_tentative.6) %>% 
+  mutate(Tentative= 6)
+
+
+df7 <- d %>% 
+  select(id, `annee_tentative.7`, `traitement_tentative.7`) %>% 
+  rename(Year= annee_tentative.7, Treatment= traitement_tentative.7) %>% 
+  mutate(Tentative= 7)
+
+
+df8 <- d %>% 
+  select(id, `annee_tentative.8`, `traitement_tentative.8`) %>% 
+  rename(Year= annee_tentative.8, Treatment= traitement_tentative.8) %>% 
+  mutate(Tentative= 8)
+
+df9 <- d %>% 
+  select(id, `annee_tentative.9`, `traitement_tentative.9`) %>% 
+  rename(Year= annee_tentative.9, Treatment= traitement_tentative.9) %>% 
+  mutate(Tentative= 9)
+
+df10 <- d %>% 
+  select(id, `annee_tentative.10`, `traitement_tentative.10`) %>% 
+  rename(Year= annee_tentative.10, Treatment= traitement_tentative.10) %>% 
+  mutate(Tentative= 10)
+```
+
+create new data frame 
+arrange by id 
+
+```{r }
+dff <- bind_rows(df1, df2, df3, df4, df4, df6, df7, df8, df9, df10)
+dff <- dff %>%  arrange(id)
+
+  
+```
+
+Check for missing
+Missing at random
+1540 total observations
+773 obs missing in Year
+686 obos missing in treatment 
+
+
+```{r }
+str(dff)
+skim(dff)
+plotsmissing(dff)
+
+```
+
+ handle missing & impolausible data
+ 
+Treatment 686  missing 
+Treatment 686 missing both Year and Treatment
+Year 773 missing 
+
+There are not enough varibles to justify mulitple imputation. 
+observations missing both Year and Treatmnet omitted 
+Double check with data manager for missing treatments 
+
+1540 total observations - 686 missing (treatment) = 854
+1540 total observations - 773 missing (Year) = 776 obs 
+no_na = 767 obs
+
+154 total people 
+
+```{r }
+dff %>%  filter(is.na(Treatment))
+dff %>%  filter(is.na(Year))
+
+missing_both <- dff %>% filter(is.na(Treatment) & is.na(Year))
+missing_year <- dff %>% filter(is.na(Year))
+
+dff_missing <- dff
+dff_complete <- dff %>%filter(!is.na(Treatment) & !is.na(Year))
+skim(no_na)
+unique(no_na$id)
+
+prop.table(table(dff_missing$Year))
+prop.table(table(dff_complete$Year))
+
+
+```
+
+ NAs  appear to be missing at random
+Here we will create:
+labels, 
+factors, 
+new variables
+
+Change Treatment,
+Year to factor and create labels
+Subset first tentative to see if new attempts are increasing over time
+
+```{r }
+final <- no_na
+unique(final$Year)
+
+final$Year <- factor (final$Year, 
+            levels = c("avant_2005", "2005-2016", "2017", "2018", "2019", "2020", "2021"), 
+            labels = c("<2005", "2005-2016", "2017", "2018", "2019", "2020","2021")
+                          )
+final$Treatment <- factor(final$Treatment, 
+                        levels = c( "traitement.1", "traitement.2", "traitement.3","traitement.4"),
+                        labels= c("I", "II","III", "IV"))
+
+summary(final$Treatment)
+summary(final$Year)
+save(final)
+
+```
+
+
+Summary statistics, Gt summary
+
+```{r }
+
+```
+
+Plots , graphs 
+
+```{r }
+
+```
+
+statistical test
+
+```{r }
+
+```
